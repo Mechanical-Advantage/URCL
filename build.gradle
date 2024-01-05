@@ -1,0 +1,102 @@
+plugins {
+  id 'cpp'
+  id 'java'
+  id 'edu.wpi.first.wpilib.repositories.WPILibRepositoriesPlugin' version '2020.2'
+  id 'edu.wpi.first.NativeUtils' version '2024.6.1'
+  id 'edu.wpi.first.GradleJni' version '1.1.0'
+  id 'edu.wpi.first.GradleVsCode' version '2.1.0'
+}
+
+repositories {
+  mavenCentral()
+}
+if (project.hasProperty('releaseMode')) {
+  wpilibRepositories.addAllReleaseRepositories(project)
+} else {
+  wpilibRepositories.addAllDevelopmentRepositories(project)
+}
+
+// Apply C++ configuration
+apply from: 'config.gradle'
+
+// Apply Java configuration
+dependencies {
+    implementation 'edu.wpi.first.cscore:cscore-java:2024.+'
+    implementation 'edu.wpi.first.cameraserver:cameraserver-java:2024.+'
+    implementation 'edu.wpi.first.ntcore:ntcore-java:2024.+'
+    implementation 'edu.wpi.first.wpilibj:wpilibj-java:2024.+'
+    implementation 'edu.wpi.first.wpiutil:wpiutil-java:2024.+'
+    implementation 'edu.wpi.first.wpimath:wpimath-java:2024.+'
+    implementation 'edu.wpi.first.wpiunits:wpiunits-java:2024.+'
+    implementation 'edu.wpi.first.hal:hal-java:2024.+'
+    implementation "org.ejml:ejml-simple:0.43.1"
+    implementation "com.fasterxml.jackson.core:jackson-annotations:2.12.4"
+    implementation "com.fasterxml.jackson.core:jackson-core:2.12.4"
+    implementation "com.fasterxml.jackson.core:jackson-databind:2.12.4"
+    implementation 'edu.wpi.first.thirdparty.frc2024.opencv:opencv-java:4.8.0-2'
+}
+
+// Set up exports properly
+nativeUtils {
+  exportsConfigs {
+    // Main library is just default empty. This will export everything
+    URCL {
+    }
+  }
+  privateExportsConfigs {
+    // Only export explicit symbols from driver library
+    URCLDriver {
+      exportsFile = project.file("src/main/driver/symbols.txt")
+    }
+  }
+}
+
+model {
+  components {
+    URCL(NativeLibrarySpec) {
+      sources {
+        cpp {
+          source {
+            srcDirs 'src/main/native/cpp'
+            include '**/*.cpp'
+          }
+          exportedHeaders {
+            srcDirs 'src/main/native/include'
+          }
+        }
+      }
+      binaries.all {
+        lib library: 'URCLDriver', linkage: 'shared'
+      }
+      nativeUtils.useRequiredLibrary(it, 'wpilib_shared')
+    }
+
+    URCLDriver(JniNativeLibrarySpec) {
+      enableCheckTask true
+      javaCompileTasks << compileJava
+      jniCrossCompileOptions << JniCrossCompileOptions(nativeUtils.wpi.platforms.roborio)
+      // Leave these for future proofing
+      jniCrossCompileOptions << JniCrossCompileOptions(nativeUtils.wpi.platforms.linuxarm32)
+      jniCrossCompileOptions << JniCrossCompileOptions(nativeUtils.wpi.platforms.linuxarm64)
+      sources {
+        cpp {
+          source {
+            srcDirs 'src/main/driver/cpp'
+            include '**/*.cpp'
+          }
+          exportedHeaders {
+            srcDirs 'src/main/driver/include'
+          }
+        }
+      }
+
+      nativeUtils.useRequiredLibrary(it, "driver_shared")
+    }
+  }
+}
+
+apply from: 'publish.gradle'
+
+wrapper {
+  gradleVersion '8.4'
+}

@@ -1,0 +1,4 @@
+1. Push updated version in "publish.gradle" and vendordep JSON to "main" branch
+2. Download maven artifact from GitHub Actions
+3. Replace maven artifacts and vendordep JSON on "maven" branch
+4. Create tag and release from "maven" branch
