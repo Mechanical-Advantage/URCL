@@ -137,7 +137,7 @@ void URCLDriver_read() {
     }
 
     HAL_CANStreamMessage messages[std::max(maxPersistentMessages, maxPeriodicMessages)];
-    uint32_t messageCount;
+    uint32_t messageCount = 0;
 
     // Read firmware messages
     HAL_CAN_ReadStreamSession(firmwareStreamHandle, messages, maxPersistentMessages, &messageCount, &halStatus);
