@@ -9,6 +9,8 @@ package org.littletonrobotics.urcl;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.Charset;
+import java.util.Map;
 import java.util.function.Supplier;
 
 import edu.wpi.first.networktables.NetworkTableInstance;
@@ -35,8 +37,12 @@ public class URCL {
   private static final double period = 0.02;
 
   private static boolean running = false;
-  private static ByteBuffer buffer;
-  private static RawPublisher publisher;
+  private static ByteBuffer persistentBuffer;
+  private static ByteBuffer periodicBuffer;
+  private static ByteBuffer aliasesBuffer;
+  private static RawPublisher persistentPublisher;
+  private static RawPublisher periodicPublisher;
+  private static RawPublisher aliasesPublisher;
   private static Notifier notifier;
 
   /**
@@ -44,19 +50,48 @@ public class URCL {
    * should only be called once.
    */
   public static void start() {
+    start(Map.of());
+  }
+
+  /**
+   * Start capturing data from REV motor controllers to NetworkTables. This method
+   * should only be called once.
+   * 
+   * @param aliases The set of aliases mapping CAN IDs to names.
+   */
+  public static void start(Map<Integer, String> aliases) {
     if (running) {
       DriverStation.reportError("URCL cannot be started multiple times", true);
       return;
     }
     running = true;
 
-    buffer = URCLJNI.start();
-    buffer.order(ByteOrder.LITTLE_ENDIAN);
-    publisher = NetworkTableInstance.getDefault()
-        .getRawTopic("/URCL")
-        .publish("URCL");
+    // Update aliases buffer
+    updateAliasesBuffer(aliases);
+    
+    // Start driver
+    URCLJNI.start();
+    persistentBuffer = URCLJNI.getPersistentBuffer();
+    periodicBuffer = URCLJNI.getPeriodicBuffer();
+    persistentBuffer.order(ByteOrder.LITTLE_ENDIAN);
+    periodicBuffer.order(ByteOrder.LITTLE_ENDIAN);
 
-    notifier = new Notifier(() -> publisher.set(getData()));
+    // Start publishers
+    persistentPublisher = NetworkTableInstance.getDefault()
+        .getRawTopic("/URCL/Raw/Persistent")
+        .publish("URCLr2_persistent");
+    periodicPublisher = NetworkTableInstance.getDefault()
+        .getRawTopic("/URCL/Raw/Periodic")
+        .publish("URCLr2_periodic");
+    aliasesPublisher = NetworkTableInstance.getDefault()
+        .getRawTopic("/URCL/Raw/Aliases")
+        .publish("URCLr2_aliases");
+    notifier = new Notifier(() -> {
+      var data = getData();
+      persistentPublisher.set(data[0]);
+      periodicPublisher.set(data[1]);
+      aliasesPublisher.set(data[2]);
+    });
     notifier.setName("URCL");
     notifier.startPeriodic(period);
   }
@@ -69,23 +104,72 @@ public class URCL {
    * 
    * @return The log supplier, to be called periodically
    */
-  public static Supplier<ByteBuffer> startExternal() {
+  public static Supplier<ByteBuffer[]> startExternal() {
+    return startExternal(Map.of());
+  }
+
+  /**
+   * Start capturing data from REV motor controllers to an external framework like
+   * <a href=
+   * "https://github.com/Mechanical-Advantage/AdvantageKit">AdvantageKit</a>. This
+   * method should only be called once.
+   * 
+   * @param aliases The set of aliases mapping CAN IDs to names.
+   * @return The log supplier, to be called periodically
+   */
+  public static Supplier<ByteBuffer[]> startExternal(Map<Integer, String> aliases) {
     if (running) {
       DriverStation.reportError("URCL cannot be started multiple times", true);
-      ByteBuffer dummyBuffer = ByteBuffer.allocate(0);
-      return () -> dummyBuffer;
+      ByteBuffer[] emptyOutput = new ByteBuffer[] {
+        ByteBuffer.allocate(0),
+        ByteBuffer.allocate(0),
+        ByteBuffer.allocate(0)
+      };
+      return () -> emptyOutput;
     }
     running = true;
 
-    buffer = URCLJNI.start();
-    buffer.order(ByteOrder.LITTLE_ENDIAN);
+    // Update aliases buffer
+    updateAliasesBuffer(aliases);
+
+    // Start driver
+    URCLJNI.start();
+    persistentBuffer = URCLJNI.getPersistentBuffer();
+    periodicBuffer = URCLJNI.getPeriodicBuffer();
+    persistentBuffer.order(ByteOrder.LITTLE_ENDIAN);
+    periodicBuffer.order(ByteOrder.LITTLE_ENDIAN);
     return URCL::getData;
   }
 
-  /** Refreshes and reads all data from the queue. */
-  private static ByteBuffer getData() {
+  /** Fills the alias data into the aliases buffer as JSON. */
+  private static void updateAliasesBuffer(Map<Integer, String> aliases) {
+    StringBuilder aliasesBuilder = new StringBuilder();
+    aliasesBuilder.append("{");
+    boolean firstEntry = true;
+    for (Map.Entry<Integer, String> entry : aliases.entrySet()) {
+      if (!firstEntry) {
+        aliasesBuilder.append(",");
+      }
+      firstEntry = false;
+      aliasesBuilder.append("\"");
+      aliasesBuilder.append(entry.getKey().toString());
+      aliasesBuilder.append("\":\"");
+      aliasesBuilder.append(entry.getValue());
+      aliasesBuilder.append("\"");
+    }
+    aliasesBuilder.append("}");
+    aliasesBuffer = Charset.forName("UTF-8").encode(aliasesBuilder.toString());
+  }
+
+  /** Refreshes and reads all data from the queues. */
+  private static ByteBuffer[] getData() {
     URCLJNI.read();
-    int size = buffer.getInt(0);
-    return buffer.slice(4, size);
+    int persistentSize = persistentBuffer.getInt(0);
+    int periodicSize = periodicBuffer.getInt(0);
+    return new ByteBuffer[] {
+      persistentBuffer.slice(4, persistentSize),
+      periodicBuffer.slice(4, periodicSize),
+      aliasesBuffer
+    };
   }
 }

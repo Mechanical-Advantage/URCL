@@ -11,17 +11,18 @@
 extern "C" {
 #endif
 
-constexpr int startSize = 4 + 4 + 4;
 constexpr int persistentMessageSize = 8;
 constexpr int periodicMessageSize = 14;
 constexpr int maxPersistentMessages = 200;
 constexpr int maxPeriodicMessages = 500;
-constexpr int bufferSize = 
-    startSize +
-    (persistentMessageSize * maxPersistentMessages) +
-    (periodicMessageSize * maxPeriodicMessages);
+constexpr int persistentSize = 4 + (persistentMessageSize * maxPersistentMessages);
+constexpr int periodicSize = 4 + (periodicMessageSize * maxPeriodicMessages);
 
-char* URCLDriver_start();
+void URCLDriver_start();
+
+char* URCLDriver_getPersistentBuffer();
+
+char* URCLDriver_getPeriodicBuffer();
 
 void URCLDriver_read();
 

@@ -32,11 +32,22 @@ class URCL final {
    */
   static void Start();
 
+  /**
+   * Start capturing data from REV motor controllers to NetworkTables. This method
+   * should only be called once.
+   * 
+   * @param aliases The set of aliases mapping CAN IDs to names.
+   */
+  static void Start(std::map<int, std::string_view> aliases);
+
  private:
   static void Periodic();
 
   static bool running;
-  static char* buffer;
-  static nt::RawPublisher publisher;
+  static char* persistentBuffer;
+  static char* periodicBuffer;
+  static nt::RawPublisher persistentPublisher;
+  static nt::RawPublisher periodicPublisher;
+  static nt::RawPublisher aliasesPublisher;
   static frc::Notifier notifier;
 };

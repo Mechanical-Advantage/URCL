@@ -42,7 +42,8 @@ constexpr int periodicMessageId =
 constexpr int periodicMessageIdMask = 0x1ffffc00;
 
 bool running = false;
-char* sharedBuffer;
+char* persistentBuffer;
+char* periodicBuffer;
 int32_t halStatus;
 uint32_t timeOffsetMillis;
 uint32_t firmwareStreamHandle;
@@ -57,16 +58,24 @@ uint64_t devicesModelReceived = 0;
 uint64_t devicesCANReady = 0;
 HAL_CANHandle devicesCANHandles[64];
 
-char* URCLDriver_start() {
-    if (running) return sharedBuffer;
+void URCLDriver_start() {
+    if (running) return;
     running = true;
-    sharedBuffer = (char*) malloc(bufferSize);
+    persistentBuffer = (char*) malloc(persistentSize);
+    periodicBuffer = (char*) malloc(periodicSize);
     uint32_t fpgaMillis = (HAL_GetFPGATime(&halStatus) / 1000ull) & 0xffffffff;
     timeOffsetMillis = fpgaMillis - HAL_GetCANPacketBaseTime();
     HAL_CAN_OpenStreamSession(&firmwareStreamHandle, firmwareMessageId, firmwareMessageIdMask, maxPersistentMessages, &halStatus);
     HAL_CAN_OpenStreamSession(&modelStreamHandle, modelMessageId, modelMessageIdMask, maxPersistentMessages, &halStatus);
     HAL_CAN_OpenStreamSession(&periodicStreamHandle, periodicMessageId, periodicMessageIdMask, maxPeriodicMessages, &halStatus);
-    return sharedBuffer;
+}
+
+char* URCLDriver_getPersistentBuffer() {
+    return persistentBuffer;
+}
+
+char* URCLDriver_getPeriodicBuffer() {
+    return periodicBuffer;
 }
 
 /** 
@@ -76,8 +85,9 @@ void writeMessagePersistent(HAL_CANStreamMessage message) {
     uint16_t messageIdShort = message.messageID & 0xffff;
     uint32_t index = 0;
     while (index < persistentMessageCount) {
-        char* messageBuffer = sharedBuffer + startSize + (index * persistentMessageSize);
-        uint16_t existingMessageId = *messageBuffer;
+        char* messageBuffer = persistentBuffer + 4 + (index * persistentMessageSize);
+        uint16_t existingMessageId;
+        std::memcpy(&existingMessageId, messageBuffer, 2);
         if (messageIdShort == existingMessageId) {
             std::memcpy(messageBuffer + 2, &message.data, 6);
             return;
@@ -87,7 +97,7 @@ void writeMessagePersistent(HAL_CANStreamMessage message) {
 
     if (persistentMessageCount < maxPersistentMessages) {
         persistentMessageCount++;
-        char* messageBuffer = sharedBuffer + startSize + (index * persistentMessageSize);
+        char* messageBuffer = persistentBuffer + 4 + (index * persistentMessageSize);
         std::memcpy(messageBuffer, &messageIdShort, 2);
         std::memcpy(messageBuffer + 2, &message.data, 6);
     }
@@ -97,9 +107,7 @@ void writeMessagePersistent(HAL_CANStreamMessage message) {
  * Write a periodic message to the buffer at the specified index. 
  */
 void writeMessagePeriodic(HAL_CANStreamMessage message, uint32_t index) {
-    char* messageBuffer = sharedBuffer + startSize + 
-        (persistentMessageCount * persistentMessageSize) + 
-        (index * periodicMessageSize);
+    char* messageBuffer = periodicBuffer + 4 + (index * periodicMessageSize);
     uint32_t timestamp = message.timeStamp + timeOffsetMillis;
     uint16_t messageIdShort = message.messageID & 0xffff;
     std::memcpy(messageBuffer + 0, &timestamp, 4);
@@ -166,12 +174,10 @@ void URCLDriver_read() {
     }
 
     // Write sizes
-    uint32_t bufferSize = startSize - 4 + 
-        (persistentMessageCount * persistentMessageSize) + 
-        (messageCount * periodicMessageSize);
-    std::memcpy(sharedBuffer, &bufferSize, 4);
-    std::memcpy(sharedBuffer + 4, &persistentMessageCount, 4);
-    std::memcpy(sharedBuffer + 8, &messageCount, 4);
+    uint32_t persistentSize = persistentMessageCount * persistentMessageSize;
+    uint32_t periodicSize = messageCount * periodicMessageSize;
+    std::memcpy(persistentBuffer, &persistentSize, 4);
+    std::memcpy(periodicBuffer, &periodicSize, 4);
 }
 
 }

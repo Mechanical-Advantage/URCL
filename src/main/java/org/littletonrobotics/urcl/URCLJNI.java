@@ -75,15 +75,23 @@ public class URCLJNI {
     libraryLoaded = true;
   }
 
-  /**
-   * Start logging data from all devices.
-   * 
-   * @return The shared memory buffer for transferring data
-   */
-  public static native ByteBuffer start();
+  /** Start logging. */
+  public static native void start();
 
-  /**
-   * Reads all data from the queue to the shared memory buffer.
+  /** 
+   * Get the shared buffer with persistent data.
+   * 
+   * @return The shared buffer
    */
+  public static native ByteBuffer getPersistentBuffer();
+
+  /** 
+   * Get the shared buffer with periodic data.
+   * 
+   * @return The shared buffer
+   */
+  public static native ByteBuffer getPeriodicBuffer();
+
+  /** Read new data. */
   public static native void read();
 }

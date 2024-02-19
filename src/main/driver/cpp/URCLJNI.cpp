@@ -26,9 +26,19 @@ JNI_OnLoad(JavaVM* vm, void* reserved) {
 JNIEXPORT void JNICALL
 JNI_OnUnload(JavaVM* vm, void* reserved) {}
 
-JNIEXPORT jobject JNICALL
+JNIEXPORT void JNICALL
 Java_org_littletonrobotics_urcl_URCLJNI_start(JNIEnv* env, jclass clazz) {
-  return env->NewDirectByteBuffer(URCLDriver_start(), bufferSize);
+  URCLDriver_start();
+}
+
+JNIEXPORT jobject JNICALL
+Java_org_littletonrobotics_urcl_URCLJNI_getPersistentBuffer(JNIEnv* env, jclass clazz) {
+  return env->NewDirectByteBuffer(URCLDriver_getPersistentBuffer(), persistentSize);
+}
+
+JNIEXPORT jobject JNICALL
+Java_org_littletonrobotics_urcl_URCLJNI_getPeriodicBuffer(JNIEnv* env, jclass clazz) {
+  return env->NewDirectByteBuffer(URCLDriver_getPeriodicBuffer(), periodicSize);
 }
 
 JNIEXPORT void JNICALL

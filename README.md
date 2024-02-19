@@ -14,6 +14,24 @@ By default, this project builds against the latest WPILib development build. To 
 
 ## Data Format
 
+### Revision 2
+
+- "Raw/Persistent"
+  - Buffer Length, Not Published (uint32)
+  - Persistent Messages (8 bytes each)
+    - Short Message ID (uint16)
+    - Data (6 bytes)
+- "Raw/Periodic"
+  - Buffer Length, Not Published (uint32)
+  - Periodic Messages (14 bytes each)
+    - Timestamp MS (uint32)
+    - Short Message ID (uint16)
+    - Data (8 bytes)
+- "Raw/Aliases"
+  - JSON object of (CAN ID string -> alias string)
+
+### Revision 1
+
 - Buffer Size, Not Published (uint32)
 - Persistent Message Count (uint32)
 - Periodic Message Count (uint32)
