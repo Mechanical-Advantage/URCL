@@ -15,18 +15,21 @@ import java.util.function.Supplier;
 
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.RawPublisher;
+import edu.wpi.first.util.datalog.DataLog;
+import edu.wpi.first.util.datalog.RawLogEntry;
+import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Notifier;
 
 /**
  * <h2>URCL (Unofficial REV-Compatible Logger)</h2>
- * 
+ *
  * This unofficial logger enables automatic capture of CAN traffic from REV
  * motor controllers to NetworkTables, viewable using AdvantageScope. See the
  * corresponding <a href=
  * "https://github.com/Mechanical-Advantage/AdvantageScope/blob/main/docs/REV-LOGGING.md">
  * AdvantageScope documentation</a> for more details.
- * 
+ *
  * <p>
  * <b>As this library is not an official REV tool, support queries should be
  * directed to the URCL
@@ -44,6 +47,10 @@ public class URCL {
   private static RawPublisher periodicPublisher;
   private static RawPublisher aliasesPublisher;
   private static Notifier notifier;
+  private static final DataLog datalog = DataLogManager.getLog();
+  private static RawLogEntry persistentLogEntry = new RawLogEntry(datalog, "URCL/Raw/Persistent");
+  private static RawLogEntry periodicLogEntry = new RawLogEntry(datalog, "/URCL/Raw/Periodic");
+  private static RawLogEntry aliasLogEntry = new RawLogEntry(datalog, "/URCL/Raw/Aliases");
 
   /**
    * Start capturing data from REV motor controllers to NetworkTables. This method
@@ -56,10 +63,31 @@ public class URCL {
   /**
    * Start capturing data from REV motor controllers to NetworkTables. This method
    * should only be called once.
-   * 
+   *
+   * @param withNT Whether or not to run with NetworkTables.
+   */
+  public static void start(boolean withNT) {
+    start(Map.of(), withNT);
+  }
+
+  /**
+   * Start capturing data from REV motor controllers to NetworkTables. This method
+   * should only be called once.
+   *
    * @param aliases The set of aliases mapping CAN IDs to names.
    */
   public static void start(Map<Integer, String> aliases) {
+    start(aliases, true);
+  }
+
+  /**
+   * Start capturing data from REV motor controllers to NetworkTables. This method
+   * should only be called once.
+   *
+   * @param aliases The set of aliases mapping CAN IDs to names.
+   * @param withNT Whether or not to run with NetworkTables.
+   */
+  public static void start(Map<Integer, String> aliases, boolean withNT) {
     if (running) {
       DriverStation.reportError("URCL cannot be started multiple times", true);
       return;
@@ -68,7 +96,7 @@ public class URCL {
 
     // Update aliases buffer
     updateAliasesBuffer(aliases);
-    
+
     // Start driver
     URCLJNI.start();
     persistentBuffer = URCLJNI.getPersistentBuffer();
@@ -76,22 +104,32 @@ public class URCL {
     persistentBuffer.order(ByteOrder.LITTLE_ENDIAN);
     periodicBuffer.order(ByteOrder.LITTLE_ENDIAN);
 
-    // Start publishers
-    persistentPublisher = NetworkTableInstance.getDefault()
+    if (withNT) {
+      // Start publishers
+      persistentPublisher = NetworkTableInstance.getDefault()
         .getRawTopic("/URCL/Raw/Persistent")
         .publish("URCLr2_persistent");
-    periodicPublisher = NetworkTableInstance.getDefault()
+      periodicPublisher = NetworkTableInstance.getDefault()
         .getRawTopic("/URCL/Raw/Periodic")
         .publish("URCLr2_periodic");
-    aliasesPublisher = NetworkTableInstance.getDefault()
+      aliasesPublisher = NetworkTableInstance.getDefault()
         .getRawTopic("/URCL/Raw/Aliases")
         .publish("URCLr2_aliases");
-    notifier = new Notifier(() -> {
-      var data = getData();
-      persistentPublisher.set(data[0]);
-      periodicPublisher.set(data[1]);
-      aliasesPublisher.set(data[2]);
-    });
+      notifier = new Notifier(() -> {
+        var data = getData();
+        persistentPublisher.set(data[0]);
+        periodicPublisher.set(data[1]);
+        aliasesPublisher.set(data[2]);
+      });
+    } else {
+      notifier = new Notifier(() -> {
+        var data = getData();
+        persistentLogEntry.append(data[0]);
+        periodicLogEntry.append(data[1]);
+        aliasLogEntry.append(data[2]);
+      });
+    }
+
     notifier.setName("URCL");
     notifier.startPeriodic(period);
   }
@@ -101,7 +139,7 @@ public class URCL {
    * <a href=
    * "https://github.com/Mechanical-Advantage/AdvantageKit">AdvantageKit</a>. This
    * method should only be called once.
-   * 
+   *
    * @return The log supplier, to be called periodically
    */
   public static Supplier<ByteBuffer[]> startExternal() {
@@ -113,7 +151,7 @@ public class URCL {
    * <a href=
    * "https://github.com/Mechanical-Advantage/AdvantageKit">AdvantageKit</a>. This
    * method should only be called once.
-   * 
+   *
    * @param aliases The set of aliases mapping CAN IDs to names.
    * @return The log supplier, to be called periodically
    */
