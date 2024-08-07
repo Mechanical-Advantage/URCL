@@ -90,9 +90,9 @@ void URCL::Start(std::map<int, std::string_view> aliases, bool withNT) {
   persistentBuffer = URCLDriver_getPersistentBuffer();
   periodicBuffer = URCLDriver_getPeriodicBuffer();
 
-  persistentLogEntry = wpi::log::RawLogEntry{frc::DataLogManager::GetLog(), "/URCL/Raw/Persistent"};
-  periodicLogEntry = wpi::log::RawLogEntry{frc::DataLogManager::GetLog(), "/URCL/Raw/Periodic"};
-  aliasesLogEntry = wpi::log::RawLogEntry{frc::DataLogManager::GetLog(), "/URCL/Raw/Aliases"};
+  persistentLogEntry = wpi::log::RawLogEntry{frc::DataLogManager::GetLog(), "/URCL/Raw/Persistent", "", "URCLr2_persistent"};
+  periodicLogEntry = wpi::log::RawLogEntry{frc::DataLogManager::GetLog(), "/URCL/Raw/Periodic", "", "URCLr2_periodic"};
+  aliasesLogEntry = wpi::log::RawLogEntry{frc::DataLogManager::GetLog(), "/URCL/Raw/Aliases", "", "URCLr2_aliases"};
   aliasesLogEntry.Append(aliasesVector);
 
   // Start notifier
