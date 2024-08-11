@@ -47,11 +47,9 @@ public class URCL {
   private static RawPublisher periodicPublisher;
   private static RawPublisher aliasesPublisher;
   private static Notifier notifier;
-  private static final DataLog datalog = DataLogManager.getLog();
-  private static RawLogEntry persistentLogEntry = new RawLogEntry(datalog, "/URCL/Raw/Persistent", "",
-      "URCLr2_persistent");
-  private static RawLogEntry periodicLogEntry = new RawLogEntry(datalog, "/URCL/Raw/Periodic", "", "URCLr2_periodic");
-  private static RawLogEntry aliasLogEntry = new RawLogEntry(datalog, "/URCL/Raw/Aliases", "", "URCLr2_aliases");
+  private static RawLogEntry persistentLogEntry;
+  private static RawLogEntry periodicLogEntry;
+  private static RawLogEntry aliasLogEntry;
 
   /**
    * Start capturing data from REV motor controllers to NetworkTables. This method
@@ -139,10 +137,10 @@ public class URCL {
     persistentBuffer.order(ByteOrder.LITTLE_ENDIAN);
     periodicBuffer.order(ByteOrder.LITTLE_ENDIAN);
 
-    persistentLogEntry = new RawLogEntry(datalog, "URCL/Raw/Persistent", "",
+    persistentLogEntry = new RawLogEntry(log, "URCL/Raw/Persistent", "",
         "URCLr2_persistent");
-    periodicLogEntry = new RawLogEntry(datalog, "/URCL/Raw/Periodic", "", "URCLr2_periodic");
-    aliasLogEntry = new RawLogEntry(datalog, "/URCL/Raw/Aliases", "", "URCLr2_aliases");
+    periodicLogEntry = new RawLogEntry(log, "/URCL/Raw/Periodic", "", "URCLr2_periodic");
+    aliasLogEntry = new RawLogEntry(log, "/URCL/Raw/Aliases", "", "URCLr2_aliases");
     notifier = new Notifier(() -> {
       var data = getData();
       persistentLogEntry.append(data[0]);
