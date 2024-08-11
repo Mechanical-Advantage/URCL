@@ -48,7 +48,8 @@ public class URCL {
   private static RawPublisher aliasesPublisher;
   private static Notifier notifier;
   private static final DataLog datalog = DataLogManager.getLog();
-  private static RawLogEntry persistentLogEntry = new RawLogEntry(datalog, "URCL/Raw/Persistent", "", "URCLr2_persistent");
+  private static RawLogEntry persistentLogEntry = new RawLogEntry(datalog, "URCL/Raw/Persistent", "",
+      "URCLr2_persistent");
   private static RawLogEntry periodicLogEntry = new RawLogEntry(datalog, "/URCL/Raw/Periodic", "", "URCLr2_periodic");
   private static RawLogEntry aliasLogEntry = new RawLogEntry(datalog, "/URCL/Raw/Aliases", "", "URCLr2_aliases");
 
@@ -61,13 +62,13 @@ public class URCL {
   }
 
   /**
-   * Start capturing data from REV motor controllers to NetworkTables. This method
+   * Start capturing data from REV motor controllers to a Datalog. This method
    * should only be called once.
    *
-   * @param withNT Whether or not to run with NetworkTables.
+   * @param log the DataLog to log to.
    */
-  public static void start(boolean withNT) {
-    start(Map.of(), withNT);
+  public static void start(DataLog log) {
+    start(Map.of(), log);
   }
 
   /**
@@ -77,17 +78,6 @@ public class URCL {
    * @param aliases The set of aliases mapping CAN IDs to names.
    */
   public static void start(Map<Integer, String> aliases) {
-    start(aliases, true);
-  }
-
-  /**
-   * Start capturing data from REV motor controllers to NetworkTables. This method
-   * should only be called once.
-   *
-   * @param aliases The set of aliases mapping CAN IDs to names.
-   * @param withNT Whether or not to run with NetworkTables.
-   */
-  public static void start(Map<Integer, String> aliases, boolean withNT) {
     if (running) {
       DriverStation.reportError("URCL cannot be started multiple times", true);
       return;
@@ -104,32 +94,61 @@ public class URCL {
     persistentBuffer.order(ByteOrder.LITTLE_ENDIAN);
     periodicBuffer.order(ByteOrder.LITTLE_ENDIAN);
 
-    if (withNT) {
-      // Start publishers
-      persistentPublisher = NetworkTableInstance.getDefault()
+    // Start publishers
+    persistentPublisher = NetworkTableInstance.getDefault()
         .getRawTopic("/URCL/Raw/Persistent")
         .publish("URCLr2_persistent");
-      periodicPublisher = NetworkTableInstance.getDefault()
+    periodicPublisher = NetworkTableInstance.getDefault()
         .getRawTopic("/URCL/Raw/Periodic")
         .publish("URCLr2_periodic");
-      aliasesPublisher = NetworkTableInstance.getDefault()
+    aliasesPublisher = NetworkTableInstance.getDefault()
         .getRawTopic("/URCL/Raw/Aliases")
         .publish("URCLr2_aliases");
-      notifier = new Notifier(() -> {
-        var data = getData();
-        persistentPublisher.set(data[0]);
-        periodicPublisher.set(data[1]);
-        aliasesPublisher.set(data[2]);
-      });
-    } else {
-      notifier = new Notifier(() -> {
-        var data = getData();
-        persistentLogEntry.append(data[0]);
-        periodicLogEntry.append(data[1]);
-        aliasLogEntry.append(data[2]);
-      });
-    }
+    notifier = new Notifier(() -> {
+      var data = getData();
+      persistentPublisher.set(data[0]);
+      periodicPublisher.set(data[1]);
+      aliasesPublisher.set(data[2]);
+    });
+    notifier.setName("URCL");
+    notifier.startPeriodic(period);
+  }
 
+  /**
+   * Start capturing data from REV motor controllers to a DataLog. This method
+   * should only be called once.
+   *
+   * @param aliases The set of aliases mapping CAN IDs to names.
+   * @param log     the DataLog to log to. Note using a DataLog means it will not
+   *                log to NetworkTables.
+   */
+  public static void start(Map<Integer, String> aliases, DataLog log) {
+    if (running) {
+      DriverStation.reportError("URCL cannot be started multiple times", true);
+      return;
+    }
+    running = true;
+
+    // Update aliases buffer
+    updateAliasesBuffer(aliases);
+
+    // Start driver
+    URCLJNI.start();
+    persistentBuffer = URCLJNI.getPersistentBuffer();
+    periodicBuffer = URCLJNI.getPeriodicBuffer();
+    persistentBuffer.order(ByteOrder.LITTLE_ENDIAN);
+    periodicBuffer.order(ByteOrder.LITTLE_ENDIAN);
+
+    persistentLogEntry = new RawLogEntry(datalog, "URCL/Raw/Persistent", "",
+        "URCLr2_persistent");
+    periodicLogEntry = new RawLogEntry(datalog, "/URCL/Raw/Periodic", "", "URCLr2_periodic");
+    aliasLogEntry = new RawLogEntry(datalog, "/URCL/Raw/Aliases", "", "URCLr2_aliases");
+    notifier = new Notifier(() -> {
+      var data = getData();
+      persistentLogEntry.append(data[0]);
+      periodicLogEntry.append(data[1]);
+      aliasLogEntry.append(data[2]);
+    });
     notifier.setName("URCL");
     notifier.startPeriodic(period);
   }
@@ -159,9 +178,9 @@ public class URCL {
     if (running) {
       DriverStation.reportError("URCL cannot be started multiple times", true);
       ByteBuffer[] emptyOutput = new ByteBuffer[] {
-        ByteBuffer.allocate(0),
-        ByteBuffer.allocate(0),
-        ByteBuffer.allocate(0)
+          ByteBuffer.allocate(0),
+          ByteBuffer.allocate(0),
+          ByteBuffer.allocate(0)
       };
       return () -> emptyOutput;
     }
@@ -205,9 +224,9 @@ public class URCL {
     int persistentSize = persistentBuffer.getInt(0);
     int periodicSize = periodicBuffer.getInt(0);
     return new ByteBuffer[] {
-      persistentBuffer.slice(4, persistentSize),
-      periodicBuffer.slice(4, periodicSize),
-      aliasesBuffer
+        persistentBuffer.slice(4, persistentSize),
+        periodicBuffer.slice(4, periodicSize),
+        aliasesBuffer
     };
   }
 }
