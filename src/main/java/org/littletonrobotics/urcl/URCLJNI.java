@@ -8,7 +8,6 @@
 package org.littletonrobotics.urcl;
 
 import java.io.IOException;
-import java.lang.System;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -19,6 +18,7 @@ import edu.wpi.first.util.RuntimeLoader;
  */
 public class URCLJNI {
   static boolean libraryLoaded = false;
+  static RuntimeLoader<URCLJNI> loader = null;
 
   /**
    * Helper class for determining whether or not to load the driver on static
@@ -29,7 +29,7 @@ public class URCLJNI {
 
     /**
      * Get whether to load the driver on static init.
-     *
+     * 
      * @return true if the driver will load on static init
      */
     public static boolean getExtractOnStaticLoad() {
@@ -38,7 +38,7 @@ public class URCLJNI {
 
     /**
      * Set whether to load the driver on static init.
-     *
+     * 
      * @param load the new value
      */
     public static void setExtractOnStaticLoad(boolean load) {
@@ -49,7 +49,9 @@ public class URCLJNI {
   static {
     if (Helper.getExtractOnStaticLoad()) {
       try {
-        RuntimeLoader.loadLibrary("URCLDriver");
+        loader = new RuntimeLoader<>("URCLDriver", RuntimeLoader.getDefaultExtractionRoot(),
+            URCLJNI.class);
+        loader.loadLibrary();
       } catch (IOException ex) {
         ex.printStackTrace();
         System.exit(1);
@@ -60,30 +62,32 @@ public class URCLJNI {
 
   /**
    * Force load the library.
-   *
+   * 
    * @throws java.io.IOException thrown if the native library cannot be found
    */
   public static synchronized void forceLoad() throws IOException {
     if (libraryLoaded) {
       return;
     }
-    RuntimeLoader.loadLibrary("URCLDriver");
+    loader = new RuntimeLoader<>("URCLDriver", RuntimeLoader.getDefaultExtractionRoot(),
+        URCLJNI.class);
+    loader.loadLibrary();
     libraryLoaded = true;
   }
 
   /** Start logging. */
   public static native void start();
 
-  /**
+  /** 
    * Get the shared buffer with persistent data.
-   *
+   * 
    * @return The shared buffer
    */
   public static native ByteBuffer getPersistentBuffer();
 
-  /**
+  /** 
    * Get the shared buffer with periodic data.
-   *
+   * 
    * @return The shared buffer
    */
   public static native ByteBuffer getPeriodicBuffer();
