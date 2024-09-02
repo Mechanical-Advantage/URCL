@@ -6,7 +6,7 @@ nativeUtils.withCrossRoboRIO()
 nativeUtils {
     wpi {
         configureDependencies {
-            wpiVersion = "2024.+"
+            wpiVersion = "2025.+"
             opencvYear = "frc2024"
             googleTestYear = "frc2024"
             niLibVersion = "2024.2.1"

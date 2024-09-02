@@ -35,12 +35,12 @@ class URCL final {
   static void Start();
 
   /**
-   * Start capturing data from REV motor controllers to NetworkTables. This method
+   * Start capturing data from REV motor controllers to a DataLog. This method
    * should only be called once.
    *
-   * @param withNT Whether or not to run with NetworkTables.
+   * @param log The DataLog object to log to.
    */
-  static void Start(bool withNT);
+  static void Start(wpi::log::DataLog& log);
 
   /**
    * Start capturing data from REV motor controllers to NetworkTables. This method
@@ -51,19 +51,18 @@ class URCL final {
   static void Start(std::map<int, std::string_view> aliases);
 
   /**
-   * Start capturing data from REV motor controllers to NetworkTables. This method
+   * Start capturing data from REV motor controllers to a DataLog. This method
    * should only be called once.
    *
    * @param aliases The set of aliases mapping CAN IDs to names.
    * @param withNT Whether or not to run with NetworkTables.
    */
-  static void Start(std::map<int, std::string_view> aliases, bool withNT);
+  static void Start(std::map<int, std::string_view> aliases, wpi::log::DataLog& log);
 
  private:
   static void Periodic();
 
   static bool running;
-  static bool withNT;
   static char* persistentBuffer;
   static char* periodicBuffer;
   static nt::RawPublisher persistentPublisher;
