@@ -8,36 +8,32 @@
 #include "URCL.h"
 #include "URCLDriver.h"
 
+#include <cstring>
+#include <frc/DataLogManager.h>
 #include <frc/Errors.h>
 #include <frc/Notifier.h>
-#include <networktables/NetworkTableInstance.h>
-#include <networktables/RawTopic.h>
-#include <wpi/DataLog.h>
-#include <units/time.h>
-#include <cstring>
-#include <string>
-#include <sstream>
-#include <stdlib.h>
 #include <functional>
 #include <iostream>
+#include <networktables/NetworkTableInstance.h>
+#include <networktables/RawTopic.h>
+#include <sstream>
+#include <stdlib.h>
+#include <string>
+#include <string_view>
+#include <units/time.h>
+#include <wpi/DataLog.h>
 
 static constexpr auto period = 20_ms;
 
 bool URCL::running = false;
-char* URCL::persistentBuffer = nullptr;
-char* URCL::periodicBuffer = nullptr;
-nt::RawPublisher URCL::persistentPublisher = 
-  nt::NetworkTableInstance::GetDefault()
-    .GetRawTopic("/URCL/Raw/Persistent")
-    .Publish("URCLr2_persistent");
-nt::RawPublisher URCL::periodicPublisher = 
-  nt::NetworkTableInstance::GetDefault()
-    .GetRawTopic("/URCL/Raw/Periodic")
-    .Publish("URCLr2_periodic");
-nt::RawPublisher URCL::aliasesPublisher = 
-  nt::NetworkTableInstance::GetDefault()
-    .GetRawTopic("/URCL/Raw/Aliases")
-    .Publish("URCLr2_aliases");
+char *URCL::persistentBuffer = nullptr;
+char *URCL::periodicBuffer = nullptr;
+nt::RawPublisher URCL::persistentPublisher;
+nt::RawPublisher URCL::periodicPublisher;
+nt::RawPublisher URCL::aliasesPublisher;
+wpi::log::RawLogEntry URCL::persistentLogEntry;
+wpi::log::RawLogEntry URCL::periodicLogEntry;
+wpi::log::RawLogEntry URCL::aliasesLogEntry;
 frc::Notifier URCL::notifier{URCL::Periodic};
 
 void URCL::Start() {
@@ -47,7 +43,8 @@ void URCL::Start() {
 
 void URCL::Start(std::map<int, std::string_view> aliases) {
   if (running) {
-    FRC_ReportError(frc::err::Error, "{}", "URCL cannot be started multiple times");
+    FRC_ReportError(frc::err::Error, "{}",
+                    "URCL cannot be started multiple times");
     return;
   }
 
@@ -55,7 +52,7 @@ void URCL::Start(std::map<int, std::string_view> aliases) {
   std::ostringstream aliasesBuilder;
   aliasesBuilder << "{";
   bool firstEntry = true;
-  for (auto const& [key, value] : aliases) {
+  for (auto const &[key, value] : aliases) {
     if (!firstEntry) {
       aliasesBuilder << ",";
     }
@@ -69,13 +66,79 @@ void URCL::Start(std::map<int, std::string_view> aliases) {
   aliasesBuilder << "}";
   std::string aliasesString = aliasesBuilder.str();
   std::vector<uint8_t> aliasesVector(aliasesString.size());
-  std::memcpy(aliasesVector.data(), aliasesString.c_str(), aliasesString.size());
-  aliasesPublisher.Set(aliasesVector);
+  std::memcpy(aliasesVector.data(), aliasesString.c_str(),
+              aliasesString.size());
 
   // Start driver
   URCLDriver_start();
   persistentBuffer = URCLDriver_getPersistentBuffer();
   periodicBuffer = URCLDriver_getPeriodicBuffer();
+
+  // Start publishers
+  persistentPublisher = nt::NetworkTableInstance::GetDefault()
+                            .GetRawTopic("/URCL/Raw/Persistent")
+                            .Publish("URCLr2_persistent");
+  periodicPublisher = nt::NetworkTableInstance::GetDefault()
+                          .GetRawTopic("/URCL/Raw/Periodic")
+                          .Publish("URCLr2_periodic");
+  aliasesPublisher = nt::NetworkTableInstance::GetDefault()
+                         .GetRawTopic("/URCL/Raw/Aliases")
+                         .Publish("URCLr2_aliases");
+
+  aliasesPublisher.Set(aliasesVector);
+
+  // Start notifier
+  notifier.SetName("URCL");
+  notifier.StartPeriodic(period);
+}
+
+void URCL::Start(wpi::log::DataLog &log) {
+  std::map<int, std::string_view> aliases;
+  URCL::Start(aliases, log);
+}
+
+void URCL::Start(std::map<int, std::string_view> aliases,
+                 wpi::log::DataLog &log) {
+  if (running) {
+    FRC_ReportError(frc::err::Error, "{}",
+                    "URCL cannot be started multiple times");
+    return;
+  }
+
+  // Publish aliases
+  std::ostringstream aliasesBuilder;
+  aliasesBuilder << "{";
+  bool firstEntry = true;
+  for (auto const &[key, value] : aliases) {
+    if (!firstEntry) {
+      aliasesBuilder << ",";
+    }
+    firstEntry = false;
+    aliasesBuilder << "\"";
+    aliasesBuilder << key;
+    aliasesBuilder << "\":\"";
+    aliasesBuilder << value;
+    aliasesBuilder << "\"";
+  }
+  aliasesBuilder << "}";
+  std::string aliasesString = aliasesBuilder.str();
+  std::vector<uint8_t> aliasesVector(aliasesString.size());
+  std::memcpy(aliasesVector.data(), aliasesString.c_str(),
+              aliasesString.size());
+
+  // Start driver
+  URCLDriver_start();
+  persistentBuffer = URCLDriver_getPersistentBuffer();
+  periodicBuffer = URCLDriver_getPeriodicBuffer();
+
+  persistentLogEntry = wpi::log::RawLogEntry{log, "/URCL/Raw/Persistent", "",
+                                             "URCLr2_persistent"};
+  periodicLogEntry =
+      wpi::log::RawLogEntry{log, "/URCL/Raw/Periodic", "", "URCLr2_periodic"};
+  aliasesLogEntry =
+      wpi::log::RawLogEntry{log, "/URCL/Raw/Aliases", "", "URCLr2_aliases"};
+
+  aliasesLogEntry.Append(aliasesVector);
 
   // Start notifier
   notifier.SetName("URCL");
@@ -83,15 +146,25 @@ void URCL::Start(std::map<int, std::string_view> aliases) {
 }
 
 void URCL::Periodic() {
-  URCLDriver_read();
-  uint32_t persistentSize;
-  uint32_t periodicSize;
-  std::memcpy(&persistentSize, persistentBuffer, 4);
-  std::memcpy(&periodicSize, periodicBuffer, 4);
-  std::vector<uint8_t> persistentVector(persistentSize);
-  std::vector<uint8_t> periodicVector(periodicSize);
-  std::memcpy(persistentVector.data(), persistentBuffer + 4, persistentVector.size());
-  std::memcpy(periodicVector.data(), periodicBuffer + 4, periodicVector.size());
-  persistentPublisher.Set(persistentVector);
-  periodicPublisher.Set(periodicVector);
+    URCLDriver_read();
+    uint32_t persistentSize;
+    uint32_t periodicSize;
+    std::memcpy(&persistentSize, persistentBuffer, 4);
+    std::memcpy(&periodicSize, periodicBuffer, 4);
+    std::vector<uint8_t> persistentVector(persistentSize);
+    std::vector<uint8_t> periodicVector(periodicSize);
+    std::memcpy(persistentVector.data(), persistentBuffer + 4,
+                persistentVector.size());
+    std::memcpy(periodicVector.data(), periodicBuffer + 4,
+                periodicVector.size());
+
+    if (persistentPublisher && periodicPublisher) {
+      persistentPublisher.Set(persistentVector);
+      periodicPublisher.Set(periodicVector);
+    }
+
+    if (persistentLogEntry && periodicLogEntry) {
+      persistentLogEntry.Update(persistentVector);
+      periodicLogEntry.Update(periodicVector);
+    }
 }
