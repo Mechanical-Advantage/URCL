@@ -28,17 +28,6 @@ static constexpr auto period = 20_ms;
 bool URCL::running = false;
 char *URCL::persistentBuffer = nullptr;
 char *URCL::periodicBuffer = nullptr;
-nt::RawPublisher URCL::persistentPublisher =
-    nt::NetworkTableInstance::GetDefault()
-        .GetRawTopic("/URCL/Raw/Persistent")
-        .Publish("URCLr2_persistent");
-nt::RawPublisher URCL::periodicPublisher =
-    nt::NetworkTableInstance::GetDefault()
-        .GetRawTopic("/URCL/Raw/Periodic")
-        .Publish("URCLr2_periodic");
-nt::RawPublisher URCL::aliasesPublisher = nt::NetworkTableInstance::GetDefault()
-                                              .GetRawTopic("/URCL/Raw/Aliases")
-                                              .Publish("URCLr2_aliases");
 frc::Notifier URCL::notifier{URCL::Periodic};
 
 void URCL::Start() {
@@ -73,7 +62,6 @@ void URCL::Start(std::map<int, std::string_view> aliases) {
   std::vector<uint8_t> aliasesVector(aliasesString.size());
   std::memcpy(aliasesVector.data(), aliasesString.c_str(),
               aliasesString.size());
-  aliasesPublisher.Set(aliasesVector);
 
   // Start driver
   URCLDriver_start();
@@ -92,6 +80,8 @@ void URCL::Start(std::map<int, std::string_view> aliases) {
   aliasesPublisher = nt::NetworkTableInstance::GetDefault()
                          .GetRawTopic("/URCL/Raw/Aliases")
                          .Publish("URCLr2_aliases");
+
+  aliasesPublisher.Set(aliasesVector);
 
   // Start notifier
   notifier.SetName("URCL");
@@ -144,6 +134,7 @@ void URCL::Start(std::map<int, std::string_view> aliases,
       wpi::log::RawLogEntry{log, "/URCL/Raw/Periodic", "", "URCLr2_periodic"};
   aliasesLogEntry =
       wpi::log::RawLogEntry{log, "/URCL/Raw/Aliases", "", "URCLr2_aliases"};
+
   aliasesLogEntry.Append(aliasesVector);
 
   // Start notifier
