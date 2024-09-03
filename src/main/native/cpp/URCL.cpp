@@ -68,8 +68,6 @@ void URCL::Start(std::map<int, std::string_view> aliases) {
   persistentBuffer = URCLDriver_getPersistentBuffer();
   periodicBuffer = URCLDriver_getPeriodicBuffer();
 
-  aliasesLogEntry.Append(aliasesVector);
-
   // Start publishers
   persistentPublisher = nt::NetworkTableInstance::GetDefault()
                             .GetRawTopic("/URCL/Raw/Persistent")
@@ -121,7 +119,6 @@ void URCL::Start(std::map<int, std::string_view> aliases,
   std::vector<uint8_t> aliasesVector(aliasesString.size());
   std::memcpy(aliasesVector.data(), aliasesString.c_str(),
               aliasesString.size());
-  aliasesPublisher.Set(aliasesVector);
 
   // Start driver
   URCLDriver_start();
