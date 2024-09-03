@@ -28,6 +28,12 @@ static constexpr auto period = 20_ms;
 bool URCL::running = false;
 char *URCL::persistentBuffer = nullptr;
 char *URCL::periodicBuffer = nullptr;
+nt::RawPublisher URCL::persistentPublisher;
+nt::RawPublisher URCL::periodicPublisher;
+nt::RawPublisher URCL::aliasesPublisher;
+wpi::log::RawLogEntry URCL::persistentLogEntry;
+wpi::log::RawLogEntry URCL::periodicLogEntry;
+wpi::log::RawLogEntry URCL::aliasesLogEntry;
 frc::Notifier URCL::notifier{URCL::Periodic};
 
 void URCL::Start() {
