@@ -2,7 +2,7 @@
 
 This unofficial project enables automatic capture of CAN traffic from REV motor controllers to NetworkTables, viewable using [AdvantageScope](https://github.com/Mechanical-Advantage/AdvantageScope).
 
-**See the corresponding [AdvantageScope documentation](https://github.com/Mechanical-Advantage/AdvantageScope/blob/main/docs/REV-LOGGING.md) for more details, including installation and usage instructions.**
+**See the corresponding [AdvantageScope documentation](https://docs.advantagescope.org/more-features/urcl) for more details, including installation and usage instructions.**
 
 ## Building and Editing
 
