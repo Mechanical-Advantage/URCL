@@ -1,6 +1,6 @@
 # Unofficial REV-Compatible Logger (URCL)
 
-This unofficial project enables automatic capture of CAN traffic from REV motor controllers to NetworkTables, viewable using [AdvantageScope](https://github.com/Mechanical-Advantage/AdvantageScope).
+This unofficial project enables automatic logging of CAN traffic from REV motor controllers to NetworkTables or a file, viewable using [AdvantageScope](https://github.com/Mechanical-Advantage/AdvantageScope).
 
 **See the corresponding [AdvantageScope documentation](https://docs.advantagescope.org/more-features/urcl) for more details, including installation and usage instructions.**
 
