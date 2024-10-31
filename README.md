@@ -14,7 +14,9 @@ By default, this project builds against the latest WPILib development build. To 
 
 ## Data Format
 
-### Revision 2
+### Revision 2/3
+
+Revision 2 = 2024, Revision 3 = 2025 (no model frames)
 
 - "Raw/Persistent"
   - Buffer Length, Not Published (uint32)

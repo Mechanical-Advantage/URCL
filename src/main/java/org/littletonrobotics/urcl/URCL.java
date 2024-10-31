@@ -94,13 +94,13 @@ public class URCL {
     // Start publishers
     persistentPublisher = NetworkTableInstance.getDefault()
         .getRawTopic("/URCL/Raw/Persistent")
-        .publish("URCLr2_persistent");
+        .publish("URCLr3_persistent");
     periodicPublisher = NetworkTableInstance.getDefault()
         .getRawTopic("/URCL/Raw/Periodic")
-        .publish("URCLr2_periodic");
+        .publish("URCLr3_periodic");
     aliasesPublisher = NetworkTableInstance.getDefault()
         .getRawTopic("/URCL/Raw/Aliases")
-        .publish("URCLr2_aliases");
+        .publish("URCLr3_aliases");
     notifier = new Notifier(() -> {
       var data = getData();
       persistentPublisher.set(data[0]);
@@ -137,9 +137,9 @@ public class URCL {
     periodicBuffer.order(ByteOrder.LITTLE_ENDIAN);
 
     persistentLogEntry = new RawLogEntry(log, "URCL/Raw/Persistent", "",
-        "URCLr2_persistent");
-    periodicLogEntry = new RawLogEntry(log, "/URCL/Raw/Periodic", "", "URCLr2_periodic");
-    aliasLogEntry = new RawLogEntry(log, "/URCL/Raw/Aliases", "", "URCLr2_aliases");
+        "URCLr3_persistent");
+    periodicLogEntry = new RawLogEntry(log, "/URCL/Raw/Periodic", "", "URCLr3_periodic");
+    aliasLogEntry = new RawLogEntry(log, "/URCL/Raw/Aliases", "", "URCLr3_aliases");
     notifier = new Notifier(() -> {
       var data = getData();
       persistentLogEntry.update(data[0]);
