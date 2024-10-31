@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import edu.wpi.first.util.RuntimeLoader;
 
 /**
- * JNI for unofficial URCL
+ * JNI for URCL
  */
 public class URCLJNI {
   static boolean libraryLoaded = false;
