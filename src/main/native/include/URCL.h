@@ -7,10 +7,12 @@
 
 #pragma once
 
-#include "frc/DataLogManager.h"
-#include "wpi/DataLog.h"
 #include <frc/Notifier.h>
+
 #include <networktables/RawTopic.h>
+#include <wpi/DataLog.h>
+
+#include "frc/DataLogManager.h"
 
 /**
  * URCL (Unofficial REV-Compatible Logger)
@@ -25,12 +27,12 @@
  * rather than REV's support contact.
  */
 class URCL final {
- public:
+public:
   URCL() = delete;
 
   /**
-   * Start capturing data from REV motor controllers to NetworkTables. This method
-   * should only be called once.
+   * Start capturing data from REV motor controllers to NetworkTables. This
+   * method should only be called once.
    */
   static void Start();
 
@@ -40,11 +42,11 @@ class URCL final {
    *
    * @param log The DataLog object to log to.
    */
-  static void Start(wpi::log::DataLog& log);
+  static void Start(wpi::log::DataLog &log);
 
   /**
-   * Start capturing data from REV motor controllers to NetworkTables. This method
-   * should only be called once.
+   * Start capturing data from REV motor controllers to NetworkTables. This
+   * method should only be called once.
    *
    * @param aliases The set of aliases mapping CAN IDs to names.
    */
@@ -57,14 +59,15 @@ class URCL final {
    * @param aliases The set of aliases mapping CAN IDs to names.
    * @param withNT Whether or not to run with NetworkTables.
    */
-  static void Start(std::map<int, std::string_view> aliases, wpi::log::DataLog& log);
+  static void Start(std::map<int, std::string_view> aliases,
+                    wpi::log::DataLog &log);
 
- private:
+private:
   static void Periodic();
 
   static bool running;
-  static char* persistentBuffer;
-  static char* periodicBuffer;
+  static char *persistentBuffer;
+  static char *periodicBuffer;
   static nt::RawPublisher persistentPublisher;
   static nt::RawPublisher periodicPublisher;
   static nt::RawPublisher aliasesPublisher;

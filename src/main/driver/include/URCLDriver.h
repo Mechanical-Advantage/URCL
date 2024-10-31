@@ -15,17 +15,18 @@ constexpr int persistentMessageSize = 8;
 constexpr int periodicMessageSize = 14;
 constexpr int maxPersistentMessages = 200;
 constexpr int maxPeriodicMessages = 500;
-constexpr int persistentSize = 4 + (persistentMessageSize * maxPersistentMessages);
+constexpr int persistentSize =
+    4 + (persistentMessageSize * maxPersistentMessages);
 constexpr int periodicSize = 4 + (periodicMessageSize * maxPeriodicMessages);
 
-void URCLDriver_start();
+void URCLDriver_start(void);
 
-char* URCLDriver_getPersistentBuffer();
+char *URCLDriver_getPersistentBuffer(void);
 
-char* URCLDriver_getPeriodicBuffer();
+char *URCLDriver_getPeriodicBuffer(void);
 
-void URCLDriver_read();
+void URCLDriver_read(void);
 
 #ifdef __cplusplus
-}  // extern "C"
+} // extern "C"
 #endif

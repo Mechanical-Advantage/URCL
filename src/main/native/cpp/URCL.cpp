@@ -6,22 +6,25 @@
 // the root directory of this project.
 
 #include "URCL.h"
-#include "URCLDriver.h"
 
-#include <cstring>
 #include <frc/DataLogManager.h>
 #include <frc/Errors.h>
 #include <frc/Notifier.h>
+
+#include <cstdlib>
+#include <cstring>
 #include <functional>
 #include <iostream>
-#include <networktables/NetworkTableInstance.h>
-#include <networktables/RawTopic.h>
 #include <sstream>
-#include <stdlib.h>
 #include <string>
 #include <string_view>
+
+#include <networktables/NetworkTableInstance.h>
+#include <networktables/RawTopic.h>
 #include <units/time.h>
 #include <wpi/DataLog.h>
+
+#include "URCLDriver.h"
 
 static constexpr auto period = 20_ms;
 
@@ -146,25 +149,24 @@ void URCL::Start(std::map<int, std::string_view> aliases,
 }
 
 void URCL::Periodic() {
-    URCLDriver_read();
-    uint32_t persistentSize;
-    uint32_t periodicSize;
-    std::memcpy(&persistentSize, persistentBuffer, 4);
-    std::memcpy(&periodicSize, periodicBuffer, 4);
-    std::vector<uint8_t> persistentVector(persistentSize);
-    std::vector<uint8_t> periodicVector(periodicSize);
-    std::memcpy(persistentVector.data(), persistentBuffer + 4,
-                persistentVector.size());
-    std::memcpy(periodicVector.data(), periodicBuffer + 4,
-                periodicVector.size());
+  URCLDriver_read();
+  uint32_t persistentSize;
+  uint32_t periodicSize;
+  std::memcpy(&persistentSize, persistentBuffer, 4);
+  std::memcpy(&periodicSize, periodicBuffer, 4);
+  std::vector<uint8_t> persistentVector(persistentSize);
+  std::vector<uint8_t> periodicVector(periodicSize);
+  std::memcpy(persistentVector.data(), persistentBuffer + 4,
+              persistentVector.size());
+  std::memcpy(periodicVector.data(), periodicBuffer + 4, periodicVector.size());
 
-    if (persistentPublisher && periodicPublisher) {
-      persistentPublisher.Set(persistentVector);
-      periodicPublisher.Set(periodicVector);
-    }
+  if (persistentPublisher && periodicPublisher) {
+    persistentPublisher.Set(persistentVector);
+    periodicPublisher.Set(periodicVector);
+  }
 
-    if (persistentLogEntry && periodicLogEntry) {
-      persistentLogEntry.Update(persistentVector);
-      periodicLogEntry.Update(periodicVector);
-    }
+  if (persistentLogEntry && periodicLogEntry) {
+    persistentLogEntry.Update(persistentVector);
+    periodicLogEntry.Update(periodicVector);
+  }
 }
