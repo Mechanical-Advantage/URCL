@@ -7,10 +7,6 @@
 
 #include "URCL.h"
 
-#include <frc/DataLogManager.h>
-#include <frc/Errors.h>
-#include <frc/Notifier.h>
-
 #include <cstdlib>
 #include <cstring>
 #include <functional>
@@ -19,6 +15,9 @@
 #include <string>
 #include <string_view>
 
+#include <frc/DataLogManager.h>
+#include <frc/Errors.h>
+#include <frc/Notifier.h>
 #include <networktables/NetworkTableInstance.h>
 #include <networktables/RawTopic.h>
 #include <units/time.h>

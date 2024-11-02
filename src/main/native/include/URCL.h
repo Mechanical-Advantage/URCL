@@ -7,12 +7,10 @@
 
 #pragma once
 
+#include <frc/DataLogManager.h>
 #include <frc/Notifier.h>
-
 #include <networktables/RawTopic.h>
 #include <wpi/DataLog.h>
-
-#include "frc/DataLogManager.h"
 
 /**
  * URCL (Unofficial REV-Compatible Logger)
