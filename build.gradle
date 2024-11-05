@@ -2,7 +2,7 @@ plugins {
   id 'cpp'
   id 'java'
   id 'edu.wpi.first.wpilib.repositories.WPILibRepositoriesPlugin' version '2020.2'
-  id 'edu.wpi.first.NativeUtils' version '2024.6.1'
+  id 'edu.wpi.first.NativeUtils' version '2025.3.0'
   id 'edu.wpi.first.GradleJni' version '1.1.0'
   id 'edu.wpi.first.GradleVsCode' version '2.1.0'
 }
@@ -33,7 +33,6 @@ dependencies {
     implementation "com.fasterxml.jackson.core:jackson-annotations:2.12.4"
     implementation "com.fasterxml.jackson.core:jackson-core:2.12.4"
     implementation "com.fasterxml.jackson.core:jackson-databind:2.12.4"
-    // implementation 'edu.wpi.first.thirdparty.frc2024.opencv:opencv-java:4.8.0-2'
 }
 
 // Set up exports properly
@@ -98,5 +97,5 @@ model {
 apply from: 'publish.gradle'
 
 wrapper {
-  gradleVersion '8.4'
+  gradleVersion '8.10.2'
 }
