@@ -79,13 +79,13 @@ void URCL::Start(std::map<int, std::string_view> aliases) {
   // Start publishers
   persistentPublisher = nt::NetworkTableInstance::GetDefault()
                             .GetRawTopic("/URCL/Raw/Persistent")
-                            .Publish("URCLr2_persistent");
+                            .Publish("URCLr3_persistent");
   periodicPublisher = nt::NetworkTableInstance::GetDefault()
                           .GetRawTopic("/URCL/Raw/Periodic")
-                          .Publish("URCLr2_periodic");
+                          .Publish("URCLr3_periodic");
   aliasesPublisher = nt::NetworkTableInstance::GetDefault()
                          .GetRawTopic("/URCL/Raw/Aliases")
-                         .Publish("URCLr2_aliases");
+                         .Publish("URCLr3_aliases");
 
   aliasesPublisher.Set(aliasesVector);
 
@@ -134,11 +134,11 @@ void URCL::Start(std::map<int, std::string_view> aliases,
   periodicBuffer = URCLDriver_getPeriodicBuffer();
 
   persistentLogEntry = wpi::log::RawLogEntry{log, "/URCL/Raw/Persistent", "",
-                                             "URCLr2_persistent"};
+                                             "URCLr3_persistent"};
   periodicLogEntry =
-      wpi::log::RawLogEntry{log, "/URCL/Raw/Periodic", "", "URCLr2_periodic"};
+      wpi::log::RawLogEntry{log, "/URCL/Raw/Periodic", "", "URCLr3_periodic"};
   aliasesLogEntry =
-      wpi::log::RawLogEntry{log, "/URCL/Raw/Aliases", "", "URCLr2_aliases"};
+      wpi::log::RawLogEntry{log, "/URCL/Raw/Aliases", "", "URCLr3_aliases"};
 
   aliasesLogEntry.Append(aliasesVector);
 

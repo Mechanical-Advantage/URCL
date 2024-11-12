@@ -21,20 +21,16 @@ extern "C" {
 constexpr HAL_CANManufacturer manufacturer = HAL_CAN_Man_kREV;
 constexpr HAL_CANDeviceType deviceType = HAL_CAN_Dev_kMotorController;
 
-constexpr int firmwareApi = 0x98;
+constexpr int firmwareApiClass = 9;
+constexpr int firmwareApiIndex = 8;
+constexpr int firmwareApi =
+    (firmwareApiClass & 0x3f) << 4 | (firmwareApiIndex & 0xf);
 constexpr int firmwareMessageId = ((deviceType & 0x1f) << 24) |
                                   ((manufacturer & 0xff) << 16) |
                                   ((firmwareApi & 0x3ff) << 6);
 constexpr int firmwareMessageIdMask = 0x1fffffc0;
 
-constexpr int modelApi =
-    0x300 | 155; // Parameter Access | Parameter Number (Device Model)
-constexpr int modelMessageId = ((deviceType & 0x1f) << 24) |
-                               ((manufacturer & 0xff) << 16) |
-                               ((modelApi & 0x3ff) << 6);
-constexpr int modelMessageIdMask = 0x1fffffc0;
-
-constexpr int periodicApiClass = 6; // Periodic Status
+constexpr int periodicApiClass = 46;
 constexpr int periodicMessageId = ((deviceType & 0x1f) << 24) |
                                   ((manufacturer & 0xff) << 16) |
                                   ((periodicApiClass & 0x3f) << 10);
@@ -46,14 +42,12 @@ char *periodicBuffer;
 int32_t halStatus;
 uint32_t timeOffsetMillis;
 uint32_t firmwareStreamHandle;
-uint32_t modelStreamHandle;
 uint32_t periodicStreamHandle;
 uint32_t persistentMessageCount = 0;
 
 uint32_t readCount = 0;
 uint64_t devicesFound = 0;
 uint64_t devicesFirmwareReceived = 0;
-uint64_t devicesModelReceived = 0;
 uint64_t devicesCANReady = 0;
 HAL_CANHandle devicesCANHandles[64];
 
@@ -67,9 +61,6 @@ void URCLDriver_start(void) {
   timeOffsetMillis = fpgaMillis - HAL_GetCANPacketBaseTime();
   HAL_CAN_OpenStreamSession(&firmwareStreamHandle, firmwareMessageId,
                             firmwareMessageIdMask, maxPersistentMessages,
-                            &halStatus);
-  HAL_CAN_OpenStreamSession(&modelStreamHandle, modelMessageId,
-                            modelMessageIdMask, maxPersistentMessages,
                             &halStatus);
   HAL_CAN_OpenStreamSession(&periodicStreamHandle, periodicMessageId,
                             periodicMessageIdMask, maxPeriodicMessages,
@@ -132,21 +123,15 @@ void URCLDriver_read(void) {
   if (readCount >= 20) {
     readCount = 0;
     uint64_t unknownFirmwareDevices = devicesFound & ~devicesFirmwareReceived;
-    uint64_t unknownModelDevices = devicesFound & ~devicesModelReceived;
     for (uint8_t i = 0; i < 64; i++) {
       bool unknownFirmware = (unknownFirmwareDevices >> i) & 1;
-      bool unknownModel = (unknownModelDevices >> i) & 1;
-      if ((unknownFirmware || unknownModel) &&
-          ((devicesCANReady >> i) & 1) == 0) {
+      if (unknownFirmware && ((devicesCANReady >> i) & 1) == 0) {
         devicesCANHandles[i] =
             HAL_InitializeCAN(manufacturer, i, deviceType, &halStatus);
         devicesCANReady |= (uint64_t)1 << i;
       }
       if (unknownFirmware) {
         HAL_WriteCANRTRFrame(devicesCANHandles[i], 0, firmwareApi, &halStatus);
-      }
-      if (unknownModel) {
-        HAL_WriteCANRTRFrame(devicesCANHandles[i], 0, modelApi, &halStatus);
       }
     }
   }
@@ -163,16 +148,6 @@ void URCLDriver_read(void) {
     uint8_t deviceId = messages[i].messageID & 0x3f;
     devicesFound |= (uint64_t)1 << deviceId;
     devicesFirmwareReceived |= (uint64_t)1 << deviceId;
-  }
-
-  // Read model messages
-  HAL_CAN_ReadStreamSession(modelStreamHandle, messages, maxPersistentMessages,
-                            &messageCount, &halStatus);
-  for (uint32_t i = 0; i < messageCount; i++) {
-    writeMessagePersistent(messages[i]);
-    uint8_t deviceId = messages[i].messageID & 0x3f;
-    devicesFound |= (uint64_t)1 << deviceId;
-    devicesModelReceived |= (uint64_t)1 << deviceId;
   }
 
   // Read periodic messages
