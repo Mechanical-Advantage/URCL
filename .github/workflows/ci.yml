@@ -98,8 +98,9 @@ jobs:
           path: ~/releases/maven/development/
       - name: "Release: Publish"
         if: github.event_name == 'release'
+        working-directory: combiner
         run: |
-          sed -i -e 's/thirdparty-mvn-release/littletonrobotics-mvn-release/g' combiner/thirdparty/combine.gradle
+          sed -i -e 's/thirdparty-mvn-release/littletonrobotics-mvn-release/g' thirdparty/combine.gradle
           ./gradlew publish -PthirdParty -PbuildName=littletonrobotics
         env:
           RUN_AZURE_ARTIFACTORY_RELEASE: "TRUE"
