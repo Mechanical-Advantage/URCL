@@ -1,6 +1,10 @@
 name: CI
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  release:
+    types: [published]
 
 jobs:
   build-docker:
@@ -27,7 +31,8 @@ jobs:
           git config --global --add safe.directory /__w/${{ github.event.repository.name }}/${{ github.event.repository.name }}
       - name: Build with Gradle
         run: ./gradlew build --max-workers 1 ${{ matrix.build-options }}
-      - uses: actions/upload-artifact@v4
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact-name }}
           path: build/allOutputs
@@ -60,7 +65,8 @@ jobs:
           architecture: ${{ matrix.architecture }}
       - name: Build with Gradle
         run: ./gradlew build -Pbuildalldesktop
-      - uses: actions/upload-artifact@v4
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact-name }}
           path: build/allOutputs
@@ -85,7 +91,17 @@ jobs:
       - name: Combine
         run: ./gradlew publish -Pthirdparty
         working-directory: combiner
-      - uses: actions/upload-artifact@v4
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
           name: Maven
           path: ~/releases/maven/development/
+      - name: "Release: Publish"
+        if: github.event_name == 'release'
+        run: |
+          sed -i -e 's/thirdparty-mvn-release/littletonrobotics-mvn-release/g' combiner/thirdparty/combine.gradle
+          ./gradlew publish -PthirdParty -PbuildName=littletonrobotics
+        env:
+          RUN_AZURE_ARTIFACTORY_RELEASE: "TRUE"
+          ARTIFACTORY_PUBLISH_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
+          ARTIFACTORY_PUBLISH_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
