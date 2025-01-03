@@ -96,12 +96,12 @@ jobs:
         with:
           name: Maven
           path: ~/releases/maven/development/
-      - name: "Release: Publish"
+      - name: "Release: Publish to Artifactory"
         if: github.event_name == 'release'
         working-directory: combiner
         run: |
           sed -i -e 's/thirdparty-mvn-release/littletonrobotics-mvn-release/g' thirdparty/combine.gradle
-          ./gradlew publish -PthirdParty -PbuildName=littletonrobotics
+          ./gradlew publish -Pthirdparty -PbuildName=littletonrobotics
         env:
           RUN_AZURE_ARTIFACTORY_RELEASE: "TRUE"
           ARTIFACTORY_PUBLISH_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
