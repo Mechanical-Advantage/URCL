@@ -101,6 +101,7 @@ jobs:
         working-directory: combiner
         run: |
           sed -i -e 's/thirdparty-mvn-release/littletonrobotics-mvn-release/g' thirdparty/combine.gradle
+          sed -i "24i\ \ \ \ clientConfig.publisher.isPublishBuildInfo = false" thirdparty/combine.gradle
           ./gradlew publish -Pthirdparty -PbuildName=littletonrobotics
         env:
           RUN_AZURE_ARTIFACTORY_RELEASE: "TRUE"
