@@ -131,7 +131,7 @@ void URCLDriver_read(void) {
         devicesCANReady |= (uint64_t)1 << i;
       }
       if (unknownFirmware) {
-        HAL_WriteCANRTRFrame(devicesCANHandles[i], 0, firmwareApi, &halStatus);
+        HAL_WriteCANRTRFrame(devicesCANHandles[i], 8, firmwareApi, &halStatus);
       }
     }
   }
