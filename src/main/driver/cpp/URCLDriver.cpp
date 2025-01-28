@@ -65,8 +65,6 @@ void URCLDriver_start(void) {
   HAL_CAN_OpenStreamSession(&periodicStreamHandle, periodicMessageId,
                             periodicMessageIdMask, maxPeriodicMessages,
                             &halStatus);
-
-  std::cout << "[URCL] Starting dev build" << std::endl;
 }
 
 char *URCLDriver_getPersistentBuffer() { return persistentBuffer; }
