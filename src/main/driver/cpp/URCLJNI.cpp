@@ -1,4 +1,4 @@
-// Copyright (c) 2024 FRC 6328
+// Copyright (c) 2025 FRC 6328
 // http://github.com/Mechanical-Advantage
 //
 // Use of this source code is governed by an MIT-style
@@ -29,9 +29,7 @@ JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved) {}
  * Signature: ()V
  */
 JNIEXPORT void JNICALL
-Java_org_littletonrobotics_urcl_URCLJNI_start
-  (JNIEnv *env, jclass clazz)
-{
+Java_org_littletonrobotics_urcl_URCLJNI_start(JNIEnv *env, jclass clazz) {
   URCLDriver_start();
 }
 
@@ -41,9 +39,8 @@ Java_org_littletonrobotics_urcl_URCLJNI_start
  * Signature: ()Ljava/lang/Object;
  */
 JNIEXPORT jobject JNICALL
-Java_org_littletonrobotics_urcl_URCLJNI_getPersistentBuffer
-  (JNIEnv *env, jclass clazz)
-{
+Java_org_littletonrobotics_urcl_URCLJNI_getPersistentBuffer(JNIEnv *env,
+                                                            jclass clazz) {
   return env->NewDirectByteBuffer(URCLDriver_getPersistentBuffer(),
                                   persistentSize);
 }
@@ -54,9 +51,8 @@ Java_org_littletonrobotics_urcl_URCLJNI_getPersistentBuffer
  * Signature: ()Ljava/lang/Object;
  */
 JNIEXPORT jobject JNICALL
-Java_org_littletonrobotics_urcl_URCLJNI_getPeriodicBuffer
-  (JNIEnv *env, jclass clazz)
-{
+Java_org_littletonrobotics_urcl_URCLJNI_getPeriodicBuffer(JNIEnv *env,
+                                                          jclass clazz) {
   return env->NewDirectByteBuffer(URCLDriver_getPeriodicBuffer(), periodicSize);
 }
 
@@ -66,8 +62,6 @@ Java_org_littletonrobotics_urcl_URCLJNI_getPeriodicBuffer
  * Signature: ()V
  */
 JNIEXPORT void JNICALL
-Java_org_littletonrobotics_urcl_URCLJNI_read
-  (JNIEnv *env, jclass clazz)
-{
+Java_org_littletonrobotics_urcl_URCLJNI_read(JNIEnv *env, jclass clazz) {
   URCLDriver_read();
 }
