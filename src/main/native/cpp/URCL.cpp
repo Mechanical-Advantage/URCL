@@ -21,7 +21,6 @@
 #include <networktables/NetworkTableInstance.h>
 #include <networktables/RawTopic.h>
 #include <units/time.h>
-#include <wpi/DataLog.h>
 
 #include "URCLDriver.h"
 
@@ -39,11 +38,11 @@ wpi::log::RawLogEntry URCL::aliasesLogEntry;
 frc::Notifier URCL::notifier{URCL::Periodic};
 
 void URCL::Start() {
-  std::map<int, std::string_view> aliases;
+  std::vector<std::map<int, std::string_view>> aliases;
   URCL::Start(aliases);
 }
 
-void URCL::Start(std::map<int, std::string_view> aliases) {
+void URCL::Start(std::vector<std::map<int, std::string_view>> aliases) {
   if (running) {
     FRC_ReportError(frc::err::Error, "{}",
                     "URCL cannot be started multiple times");
@@ -52,20 +51,29 @@ void URCL::Start(std::map<int, std::string_view> aliases) {
 
   // Publish aliases
   std::ostringstream aliasesBuilder;
-  aliasesBuilder << "{";
-  bool firstEntry = true;
-  for (auto const &[key, value] : aliases) {
-    if (!firstEntry) {
+  aliasesBuilder << "[";
+  bool firstBus = true;
+  for (auto const &busAlises : aliases) {
+    if (!firstBus) {
       aliasesBuilder << ",";
     }
-    firstEntry = false;
-    aliasesBuilder << "\"";
-    aliasesBuilder << key;
-    aliasesBuilder << "\":\"";
-    aliasesBuilder << value;
-    aliasesBuilder << "\"";
+    firstBus = false;
+    aliasesBuilder << "{";
+    bool firstEntry = true;
+    for (auto const &[key, value] : busAlises) {
+      if (!firstEntry) {
+        aliasesBuilder << ",";
+      }
+      firstEntry = false;
+      aliasesBuilder << "\"";
+      aliasesBuilder << key;
+      aliasesBuilder << "\":\"";
+      aliasesBuilder << value;
+      aliasesBuilder << "\"";
+    }
+    aliasesBuilder << "}";
   }
-  aliasesBuilder << "}";
+  aliasesBuilder << "]";
   std::string aliasesString = aliasesBuilder.str();
   std::vector<uint8_t> aliasesVector(aliasesString.size());
   std::memcpy(aliasesVector.data(), aliasesString.c_str(),
@@ -79,13 +87,13 @@ void URCL::Start(std::map<int, std::string_view> aliases) {
   // Start publishers
   persistentPublisher = nt::NetworkTableInstance::GetDefault()
                             .GetRawTopic("/URCL/Raw/Persistent")
-                            .Publish("URCLr3_persistent");
+                            .Publish("URCLr4_persistent");
   periodicPublisher = nt::NetworkTableInstance::GetDefault()
                           .GetRawTopic("/URCL/Raw/Periodic")
-                          .Publish("URCLr3_periodic");
+                          .Publish("URCLr4_periodic");
   aliasesPublisher = nt::NetworkTableInstance::GetDefault()
                          .GetRawTopic("/URCL/Raw/Aliases")
-                         .Publish("URCLr3_aliases");
+                         .Publish("URCLr4_aliases");
 
   aliasesPublisher.Set(aliasesVector);
 
@@ -95,11 +103,11 @@ void URCL::Start(std::map<int, std::string_view> aliases) {
 }
 
 void URCL::Start(wpi::log::DataLog &log) {
-  std::map<int, std::string_view> aliases;
+  std::vector<std::map<int, std::string_view>> aliases;
   URCL::Start(aliases, log);
 }
 
-void URCL::Start(std::map<int, std::string_view> aliases,
+void URCL::Start(std::vector<std::map<int, std::string_view>> aliases,
                  wpi::log::DataLog &log) {
   if (running) {
     FRC_ReportError(frc::err::Error, "{}",
@@ -109,20 +117,29 @@ void URCL::Start(std::map<int, std::string_view> aliases,
 
   // Publish aliases
   std::ostringstream aliasesBuilder;
-  aliasesBuilder << "{";
-  bool firstEntry = true;
-  for (auto const &[key, value] : aliases) {
-    if (!firstEntry) {
+  aliasesBuilder << "[";
+  bool firstBus = true;
+  for (auto const &busAlises : aliases) {
+    if (!firstBus) {
       aliasesBuilder << ",";
     }
-    firstEntry = false;
-    aliasesBuilder << "\"";
-    aliasesBuilder << key;
-    aliasesBuilder << "\":\"";
-    aliasesBuilder << value;
-    aliasesBuilder << "\"";
+    firstBus = false;
+    aliasesBuilder << "{";
+    bool firstEntry = true;
+    for (auto const &[key, value] : busAlises) {
+      if (!firstEntry) {
+        aliasesBuilder << ",";
+      }
+      firstEntry = false;
+      aliasesBuilder << "\"";
+      aliasesBuilder << key;
+      aliasesBuilder << "\":\"";
+      aliasesBuilder << value;
+      aliasesBuilder << "\"";
+    }
+    aliasesBuilder << "}";
   }
-  aliasesBuilder << "}";
+  aliasesBuilder << "]";
   std::string aliasesString = aliasesBuilder.str();
   std::vector<uint8_t> aliasesVector(aliasesString.size());
   std::memcpy(aliasesVector.data(), aliasesString.c_str(),
@@ -134,11 +151,11 @@ void URCL::Start(std::map<int, std::string_view> aliases,
   periodicBuffer = URCLDriver_getPeriodicBuffer();
 
   persistentLogEntry = wpi::log::RawLogEntry{log, "/URCL/Raw/Persistent", "",
-                                             "URCLr3_persistent"};
+                                             "URCLr4_persistent"};
   periodicLogEntry =
-      wpi::log::RawLogEntry{log, "/URCL/Raw/Periodic", "", "URCLr3_periodic"};
+      wpi::log::RawLogEntry{log, "/URCL/Raw/Periodic", "", "URCLr4_periodic"};
   aliasesLogEntry =
-      wpi::log::RawLogEntry{log, "/URCL/Raw/Aliases", "", "URCLr3_aliases"};
+      wpi::log::RawLogEntry{log, "/URCL/Raw/Aliases", "", "URCLr4_aliases"};
 
   aliasesLogEntry.Append(aliasesVector);
 

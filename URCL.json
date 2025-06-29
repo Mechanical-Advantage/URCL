@@ -25,7 +25,7 @@
             "validPlatforms": [
                 "windowsx86-64",
                 "linuxx86-64",
-                "linuxathena",
+                "linuxsystemcore",
                 "osxuniversal"
             ]
         }
@@ -42,7 +42,7 @@
             "binaryPlatforms": [
                 "windowsx86-64",
                 "linuxx86-64",
-                "linuxathena",
+                "linuxsystemcore",
                 "osxuniversal"
             ]
         },
@@ -57,7 +57,7 @@
             "binaryPlatforms": [
                 "windowsx86-64",
                 "linuxx86-64",
-                "linuxathena",
+                "linuxsystemcore",
                 "osxuniversal"
             ]
         }

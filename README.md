@@ -8,11 +8,29 @@ This unofficial project enables automatic logging of CAN traffic from REV motor 
 
 _Project based on WPILib's [2024 vendor template](https://github.com/wpilibsuite/vendor-template/tree/2024)._
 
-This project uses Gradle with the same base setup as a standard GradleRIO robot project. This means you build with `./gradlew build`, and can install the native toolchain with `./gradlew installRoboRIOToolchain`. If you open this project in VS Code with the wpilib extension installed, you will get intellisense set up for both C++ and Java.
+This project uses Gradle with the same base setup as a standard GradleRIO robot project. This means you build with `./gradlew build`, and can install the native toolchain with `./gradlew installSystemCoreToolchain`. If you open this project in VS Code with the wpilib extension installed, you will get intellisense set up for both C++ and Java.
 
 By default, this project builds against the latest WPILib development build. To build against the last WPILib tagged release, build with `./gradlew build -PreleaseMode`.
 
 ## Data Format
+
+### Revision 4
+
+- "Raw/Persistent"
+  - Buffer Length, Not Published (uint32)
+  - Persistent Messages (9 bytes each)
+    - Bus ID (uint8)
+    - Short Message ID (uint16)
+    - Data (6 bytes)
+- "Raw/Periodic"
+  - Buffer Length, Not Published (uint32)
+  - Periodic Messages (15 bytes each)
+    - Timestamp MS (uint32)
+    - Bus ID (uint8)
+    - Short Message ID (uint16)
+    - Data (8 bytes)
+- "Raw/Aliases"
+  - Array of JSON objects of (CAN ID string -> alias string), corresponding to each CAN bus
 
 ### Revision 2/3
 

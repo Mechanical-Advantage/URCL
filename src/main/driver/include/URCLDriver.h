@@ -11,8 +11,8 @@
 extern "C" {
 #endif
 
-constexpr int persistentMessageSize = 8;
-constexpr int periodicMessageSize = 14;
+constexpr int persistentMessageSize = 9;
+constexpr int periodicMessageSize = 15;
 constexpr int maxPersistentMessages = 200;
 constexpr int maxPeriodicMessages = 500;
 constexpr int persistentSize =

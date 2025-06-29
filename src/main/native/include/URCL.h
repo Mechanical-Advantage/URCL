@@ -10,7 +10,7 @@
 #include <frc/DataLogManager.h>
 #include <frc/Notifier.h>
 #include <networktables/RawTopic.h>
-#include <wpi/DataLog.h>
+#include <wpi/datalog/DataLog.h>
 
 /**
  * URCL (Unofficial REV-Compatible Logger)
@@ -48,7 +48,7 @@ public:
    *
    * @param aliases The set of aliases mapping CAN IDs to names.
    */
-  static void Start(std::map<int, std::string_view> aliases);
+  static void Start(std::vector<std::map<int, std::string_view>> aliases);
 
   /**
    * Start capturing data from REV motor controllers to a DataLog. This method
@@ -57,7 +57,7 @@ public:
    * @param aliases The set of aliases mapping CAN IDs to names.
    * @param withNT Whether or not to run with NetworkTables.
    */
-  static void Start(std::map<int, std::string_view> aliases,
+  static void Start(std::vector<std::map<int, std::string_view>> aliases,
                     wpi::log::DataLog &log);
 
 private:

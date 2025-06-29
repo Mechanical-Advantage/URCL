@@ -1,15 +1,19 @@
 plugins {
   id 'cpp'
   id 'java'
-  id 'edu.wpi.first.wpilib.repositories.WPILibRepositoriesPlugin' version '2020.2'
-  id 'edu.wpi.first.NativeUtils' version '2025.3.0'
+  id 'edu.wpi.first.wpilib.repositories.WPILibRepositoriesPlugin' version '2025.0'
+  id 'edu.wpi.first.NativeUtils' version '2025.12.1'
   id 'edu.wpi.first.GradleJni' version '1.1.0'
   id 'edu.wpi.first.GradleVsCode' version '2.1.0'
 }
 
+// WPILib Version
+ext.wpilibVersion = "2027.0.0-alpha-1"
+
 repositories {
   mavenCentral()
 }
+wpilibRepositories.use2027Repos()
 if (project.hasProperty('releaseMode')) {
   wpilibRepositories.addAllReleaseRepositories(project)
 } else {
@@ -20,16 +24,16 @@ if (project.hasProperty('releaseMode')) {
 apply from: 'config.gradle'
 
 // Apply Java configuration
-def WPILIB_VERSION = "2025.2.1"
 dependencies {
-    implementation 'edu.wpi.first.cscore:cscore-java:' + WPILIB_VERSION
-    implementation 'edu.wpi.first.cameraserver:cameraserver-java:' + WPILIB_VERSION
-    implementation 'edu.wpi.first.ntcore:ntcore-java:' + WPILIB_VERSION
-    implementation 'edu.wpi.first.wpilibj:wpilibj-java:' + WPILIB_VERSION
-    implementation 'edu.wpi.first.wpiutil:wpiutil-java:' + WPILIB_VERSION
-    implementation 'edu.wpi.first.wpimath:wpimath-java:' + WPILIB_VERSION
-    implementation 'edu.wpi.first.wpiunits:wpiunits-java:' + WPILIB_VERSION
-    implementation 'edu.wpi.first.hal:hal-java:' + WPILIB_VERSION
+    implementation "edu.wpi.first.cscore:cscore-java:$wpilibVersion"
+    implementation "edu.wpi.first.cameraserver:cameraserver-java:$wpilibVersion"
+    implementation "edu.wpi.first.ntcore:ntcore-java:$wpilibVersion"
+    implementation "edu.wpi.first.wpilibj:wpilibj-java:$wpilibVersion"
+    implementation "edu.wpi.first.wpiutil:wpiutil-java:$wpilibVersion"
+    implementation "edu.wpi.first.wpimath:wpimath-java:$wpilibVersion"
+    implementation "edu.wpi.first.wpiunits:wpiunits-java:$wpilibVersion"
+    implementation "edu.wpi.first.datalog:datalog-java:$wpilibVersion"
+    implementation "edu.wpi.first.hal:hal-java:$wpilibVersion"
     implementation "org.ejml:ejml-simple:0.43.1"
     implementation "com.fasterxml.jackson.core:jackson-annotations:2.12.4"
     implementation "com.fasterxml.jackson.core:jackson-core:2.12.4"
@@ -68,13 +72,13 @@ model {
       binaries.all {
         lib library: 'URCLDriver', linkage: 'shared'
       }
-      nativeUtils.useRequiredLibrary(it, 'wpilib_shared')
+      nativeUtils.useRequiredLibrary(it, 'wpilib_shared_2027')
     }
 
     URCLDriver(JniNativeLibrarySpec) {
       enableCheckTask true
       javaCompileTasks << compileJava
-      jniCrossCompileOptions << JniCrossCompileOptions(nativeUtils.wpi.platforms.roborio)
+      jniCrossCompileOptions << JniCrossCompileOptions(nativeUtils.wpi.platforms.systemcore)
       // Leave these for future proofing
       jniCrossCompileOptions << JniCrossCompileOptions(nativeUtils.wpi.platforms.linuxarm32)
       jniCrossCompileOptions << JniCrossCompileOptions(nativeUtils.wpi.platforms.linuxarm64)
@@ -90,7 +94,7 @@ model {
         }
       }
 
-      nativeUtils.useRequiredLibrary(it, "driver_shared")
+      nativeUtils.useRequiredLibrary(it, "driver_shared_2027")
     }
   }
 }

@@ -10,13 +10,14 @@ package org.littletonrobotics.urcl;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.Charset;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import edu.wpi.first.datalog.DataLog;
+import edu.wpi.first.datalog.RawLogEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.RawPublisher;
-import edu.wpi.first.util.datalog.DataLog;
-import edu.wpi.first.util.datalog.RawLogEntry;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Notifier;
 
@@ -55,7 +56,7 @@ public class URCL {
    * should only be called once.
    */
   public static void start() {
-    start(Map.of());
+    start(List.of());
   }
 
   /**
@@ -65,16 +66,16 @@ public class URCL {
    * @param log the DataLog to log to.
    */
   public static void start(DataLog log) {
-    start(Map.of(), log);
+    start(List.of(), log);
   }
 
   /**
    * Start capturing data from REV motor controllers to NetworkTables. This method
    * should only be called once.
    *
-   * @param aliases The set of aliases mapping CAN IDs to names.
+   * @param aliases An array for each CAN bus mapping CAN IDs to names.
    */
-  public static void start(Map<Integer, String> aliases) {
+  public static void start(List<Map<Integer, String>> aliases) {
     if (running) {
       DriverStation.reportError("URCL cannot be started multiple times", true);
       return;
@@ -94,13 +95,13 @@ public class URCL {
     // Start publishers
     persistentPublisher = NetworkTableInstance.getDefault()
         .getRawTopic("/URCL/Raw/Persistent")
-        .publish("URCLr3_persistent");
+        .publish("URCLr4_persistent");
     periodicPublisher = NetworkTableInstance.getDefault()
         .getRawTopic("/URCL/Raw/Periodic")
-        .publish("URCLr3_periodic");
+        .publish("URCLr4_periodic");
     aliasesPublisher = NetworkTableInstance.getDefault()
         .getRawTopic("/URCL/Raw/Aliases")
-        .publish("URCLr3_aliases");
+        .publish("URCLr4_aliases");
     notifier = new Notifier(() -> {
       var data = getData();
       persistentPublisher.set(data[0]);
@@ -115,11 +116,11 @@ public class URCL {
    * Start capturing data from REV motor controllers to a DataLog. This method
    * should only be called once.
    *
-   * @param aliases The set of aliases mapping CAN IDs to names.
+   * @param aliases An array for each CAN bus mapping CAN IDs to names.
    * @param log     the DataLog to log to. Note using a DataLog means it will not
    *                log to NetworkTables.
    */
-  public static void start(Map<Integer, String> aliases, DataLog log) {
+  public static void start(List<Map<Integer, String>> aliases, DataLog log) {
     if (running) {
       DriverStation.reportError("URCL cannot be started multiple times", true);
       return;
@@ -137,9 +138,9 @@ public class URCL {
     periodicBuffer.order(ByteOrder.LITTLE_ENDIAN);
 
     persistentLogEntry = new RawLogEntry(log, "URCL/Raw/Persistent", "",
-        "URCLr3_persistent");
-    periodicLogEntry = new RawLogEntry(log, "/URCL/Raw/Periodic", "", "URCLr3_periodic");
-    aliasLogEntry = new RawLogEntry(log, "/URCL/Raw/Aliases", "", "URCLr3_aliases");
+        "URCLr4_persistent");
+    periodicLogEntry = new RawLogEntry(log, "/URCL/Raw/Periodic", "", "URCLr4_periodic");
+    aliasLogEntry = new RawLogEntry(log, "/URCL/Raw/Aliases", "", "URCLr4_aliases");
     notifier = new Notifier(() -> {
       var data = getData();
       persistentLogEntry.update(data[0]);
@@ -159,7 +160,7 @@ public class URCL {
    * @return The log supplier, to be called periodically
    */
   public static Supplier<ByteBuffer[]> startExternal() {
-    return startExternal(Map.of());
+    return startExternal(List.of());
   }
 
   /**
@@ -168,10 +169,10 @@ public class URCL {
    * "https://github.com/Mechanical-Advantage/AdvantageKit">AdvantageKit</a>. This
    * method should only be called once.
    *
-   * @param aliases The set of aliases mapping CAN IDs to names.
+   * @param aliases An array for each CAN bus mapping CAN IDs to names.
    * @return The log supplier, to be called periodically
    */
-  public static Supplier<ByteBuffer[]> startExternal(Map<Integer, String> aliases) {
+  public static Supplier<ByteBuffer[]> startExternal(List<Map<Integer, String>> aliases) {
     if (running) {
       DriverStation.reportError("URCL cannot be started multiple times", true);
       ByteBuffer[] emptyOutput = new ByteBuffer[] {
@@ -196,22 +197,31 @@ public class URCL {
   }
 
   /** Fills the alias data into the aliases buffer as JSON. */
-  private static void updateAliasesBuffer(Map<Integer, String> aliases) {
+  private static void updateAliasesBuffer(List<Map<Integer, String>> aliases) {
     StringBuilder aliasesBuilder = new StringBuilder();
-    aliasesBuilder.append("{");
-    boolean firstEntry = true;
-    for (Map.Entry<Integer, String> entry : aliases.entrySet()) {
-      if (!firstEntry) {
+    aliasesBuilder.append("[");
+    boolean firstBus = true;
+    for (var busAliases : aliases) {
+      if (!firstBus) {
         aliasesBuilder.append(",");
       }
-      firstEntry = false;
-      aliasesBuilder.append("\"");
-      aliasesBuilder.append(entry.getKey().toString());
-      aliasesBuilder.append("\":\"");
-      aliasesBuilder.append(entry.getValue());
-      aliasesBuilder.append("\"");
+      firstBus = false;
+      aliasesBuilder.append("{");
+      boolean firstEntry = true;
+      for (Map.Entry<Integer, String> entry : busAliases.entrySet()) {
+        if (!firstEntry) {
+          aliasesBuilder.append(",");
+        }
+        firstEntry = false;
+        aliasesBuilder.append("\"");
+        aliasesBuilder.append(entry.getKey().toString());
+        aliasesBuilder.append("\":\"");
+        aliasesBuilder.append(entry.getValue());
+        aliasesBuilder.append("\"");
+      }
+      aliasesBuilder.append("}");
     }
-    aliasesBuilder.append("}");
+    aliasesBuilder.append("]");
     aliasesBuffer = Charset.forName("UTF-8").encode(aliasesBuilder.toString());
   }
 
