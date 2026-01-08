@@ -20,7 +20,7 @@ if (project.hasProperty('releaseMode')) {
 apply from: 'config.gradle'
 
 // Apply Java configuration
-def WPILIB_VERSION = "2026.1.1-beta-1"
+def WPILIB_VERSION = "2026.1.1"
 dependencies {
     implementation 'edu.wpi.first.cscore:cscore-java:' + WPILIB_VERSION
     implementation 'edu.wpi.first.cameraserver:cameraserver-java:' + WPILIB_VERSION
